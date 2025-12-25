@@ -1,0 +1,1 @@
+rtsp://admin:Phantom%4023@192.168.0.196:554/cam/realmonitor?channel=1&subtype=1
