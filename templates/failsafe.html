@@ -1,0 +1,586 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Failsafe Monitor - NVR System{% endblock %}
+
+{% block content %}
+<section id="failsafe-view" class="view-section active">
+    <header class="section-header">
+        <h2>🛡️ Failsafe Monitor</h2>
+        <form method="get" style="display: inline;">
+            <button type="submit" class="btn btn-primary">Refresh Status</button>
+        </form>
+    </header>
+
+    <div class="failsafe-container">
+        <!-- System Health with Circular Progress -->
+        <div class="failsafe-card health-overview-card">
+            <h3>System Health</h3>
+            <div class="health-circles-grid">
+                <!-- CPU Circle -->
+                <div class="health-circle-wrapper">
+                    <div class="circular-progress">
+                        <svg class="progress-ring" width="120" height="120">
+                            <circle class="progress-ring-bg" cx="60" cy="60" r="52" />
+                            <circle class="progress-ring-circle cpu-ring" cx="60" cy="60" r="52"
+                                style="stroke-dashoffset: {{ cpu_usage|floatformat:0|add:0 }};"
+                                data-usage="{{ cpu_usage|floatformat:0 }}" />
+                        </svg>
+                        <div class="progress-text">
+                            <svg width="24" height="24" viewBox="0 0 16 16" fill="currentColor" class="progress-icon">
+                                <rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1"
+                                    fill="none" />
+                                <path d="M6 6h4M6 8h4M6 10h2" stroke="currentColor" stroke-width="1"
+                                    stroke-linecap="round" />
+                            </svg>
+                            <span class="progress-value" data-target="{{ cpu_usage|floatformat:1 }}">0</span>
+                            <span class="progress-unit">%</span>
+                        </div>
+                    </div>
+                    <span class="health-circle-label">CPU Usage</span>
+                </div>
+
+                <!-- Memory Circle -->
+                <div class="health-circle-wrapper">
+                    <div class="circular-progress">
+                        <svg class="progress-ring" width="120" height="120">
+                            <circle class="progress-ring-bg" cx="60" cy="60" r="52" />
+                            <circle class="progress-ring-circle memory-ring" cx="60" cy="60" r="52"
+                                style="stroke-dashoffset: {{ memory_usage|floatformat:0|add:0 }};"
+                                data-usage="{{ memory_usage|floatformat:0 }}" />
+                        </svg>
+                        <div class="progress-text">
+                            <svg width="24" height="24" viewBox="0 0 16 16" fill="currentColor" class="progress-icon">
+                                <rect x="3" y="2" width="10" height="12" rx="1" stroke="currentColor" stroke-width="1"
+                                    fill="none" />
+                                <rect x="5" y="4" width="6" height="2" fill="currentColor" />
+                                <rect x="5" y="7" width="6" height="2" fill="currentColor" />
+                                <rect x="5" y="10" width="6" height="2" fill="currentColor" />
+                            </svg>
+                            <span class="progress-value" data-target="{{ memory_usage|floatformat:1 }}">0</span>
+                            <span class="progress-unit">%</span>
+                        </div>
+                    </div>
+                    <span class="health-circle-label">Memory</span>
+                </div>
+
+                <!-- Disk Circle -->
+                <div class="health-circle-wrapper">
+                    <div class="circular-progress">
+                        <svg class="progress-ring" width="120" height="120">
+                            <circle class="progress-ring-bg" cx="60" cy="60" r="52" />
+                            <circle class="progress-ring-circle disk-ring" cx="60" cy="60" r="52"
+                                style="stroke-dashoffset: {{ disk_usage|floatformat:0|add:0 }};"
+                                data-usage="{{ disk_usage|floatformat:0 }}" />
+                        </svg>
+                        <div class="progress-text">
+                            <svg width="24" height="24" viewBox="0 0 16 16" fill="currentColor" class="progress-icon">
+                                <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1" fill="none" />
+                                <circle cx="8" cy="8" r="2" fill="currentColor" />
+                                <path d="M8 2v2M8 12v2M2 8h2M12 8h2" stroke="currentColor" stroke-width="1"
+                                    stroke-linecap="round" />
+                            </svg>
+                            <span class="progress-value" data-target="{{ disk_usage|floatformat:1 }}">0</span>
+                            <span class="progress-unit">%</span>
+                        </div>
+                    </div>
+                    <span class="health-circle-label">Disk Storage</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="failsafe-card">
+            <h3>Monitoring Status</h3>
+            <div class="status-list">
+                <div class="status-line">
+                    <span class="status-label">Monitor Running:</span>
+                    <span class="status-badge {% if monitor_running %}status-online{% else %}status-offline{% endif %}">
+                        {% if monitor_running %}ACTIVE{% else %}STOPPED{% endif %}
+                    </span>
+                </div>
+                <div class="status-line">
+                    <span class="status-label">Cameras Monitored:</span>
+                    <span class="status-value">{{ cameras_monitored }}</span>
+                </div>
+                <div class="status-line">
+                    <span class="status-label">Last Check:</span>
+                    <span class="status-value">{{ last_check }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="failsafe-card">
+            <h3>Recovery Attempts</h3>
+            <div class="recovery-list">
+                <p class="empty-message">No recovery attempts in last 24 hours</p>
+            </div>
+        </div>
+
+        <div class="failsafe-info-box">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="2" />
+                <line x1="10" y1="6" x2="10" y2="10" stroke="currentColor" stroke-width="2" />
+                <circle cx="10" cy="13" r="1" fill="currentColor" />
+            </svg>
+            <div>
+                <p><strong>Automatic Failsafe System</strong></p>
+                <p>Monitors system health and automatically recovers from failures without affecting streaming and
+                    recording.</p>
+                <ul style="margin-top: 10px; margin-left: 20px;">
+                    <li>✓ Detects dead streams and reconnects automatically</li>
+                    <li>✓ Monitors recording activity and restarts if stalled</li>
+                    <li>✓ Tracks CPU, memory, and disk usage</li>
+                    <li>✓ Cleans up old exports and recordings</li>
+                    <li>✓ Updates every 30 seconds</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    .failsafe-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+        padding: 20px;
+    }
+
+    .failsafe-card {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        padding: 20px;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .failsafe-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    }
+
+    .failsafe-card h3 {
+        margin: 0 0 20px 0;
+        font-size: 16px;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+    }
+
+    .health-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .health-item {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .health-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .health-label {
+        font-size: 14px;
+        color: #9ca3af;
+        display: flex;
+        align-items: center;
+        font-weight: 500;
+    }
+
+    .health-bar {
+        height: 12px;
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 6px;
+        overflow: hidden;
+        position: relative;
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .health-fill {
+        height: 100%;
+        position: relative;
+        transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+        border-radius: 6px;
+        overflow: hidden;
+    }
+
+    /* Shimmer animation effect */
+    .health-shimmer {
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg,
+                transparent 0%,
+                rgba(255, 255, 255, 0.3) 50%,
+                transparent 100%);
+        animation: shimmer 2s infinite;
+    }
+
+    @keyframes shimmer {
+        0% {
+            left: -100%;
+        }
+
+        100% {
+            left: 100%;
+        }
+    }
+
+    /* Color-coded fills based on usage */
+    .cpu-fill,
+    .memory-fill,
+    .disk-fill {
+        background: linear-gradient(90deg, #10b981, #059669);
+    }
+
+    /* Medium usage (50-75%) - Yellow */
+    .cpu-fill[data-usage]:is([data-usage="50"], [data-usage="51"], [data-usage="52"], [data-usage="53"], [data-usage="54"], [data-usage="55"], [data-usage="56"], [data-usage="57"], [data-usage="58"], [data-usage="59"], [data-usage="60"], [data-usage="61"], [data-usage="62"], [data-usage="63"], [data-usage="64"], [data-usage="65"], [data-usage="66"], [data-usage="67"], [data-usage="68"], [data-usage="69"], [data-usage="70"], [data-usage="71"], [data-usage="72"], [data-usage="73"], [data-usage="74"], [data-usage="75"]),
+    .memory-fill[data-usage]:is([data-usage="50"], [data-usage="51"], [data-usage="52"], [data-usage="53"], [data-usage="54"], [data-usage="55"], [data-usage="56"], [data-usage="57"], [data-usage="58"], [data-usage="59"], [data-usage="60"], [data-usage="61"], [data-usage="62"], [data-usage="63"], [data-usage="64"], [data-usage="65"], [data-usage="66"], [data-usage="67"], [data-usage="68"], [data-usage="69"], [data-usage="70"], [data-usage="71"], [data-usage="72"], [data-usage="73"], [data-usage="74"], [data-usage="75"]),
+    .disk-fill[data-usage]:is([data-usage="50"], [data-usage="51"], [data-usage="52"], [data-usage="53"], [data-usage="54"], [data-usage="55"], [data-usage="56"], [data-usage="57"], [data-usage="58"], [data-usage="59"], [data-usage="60"], [data-usage="61"], [data-usage="62"], [data-usage="63"], [data-usage="64"], [data-usage="65"], [data-usage="66"], [data-usage="67"], [data-usage="68"], [data-usage="69"], [data-usage="70"], [data-usage="71"], [data-usage="72"], [data-usage="73"], [data-usage="74"], [data-usage="75"]) {
+        background: linear-gradient(90deg, #f59e0b, #d97706);
+    }
+
+    /* High usage (75%+) - Red with pulse */
+    .cpu-fill[data-usage]:is([data-usage="76"], [data-usage="77"], [data-usage="78"], [data-usage="79"], [data-usage="80"], [data-usage="81"], [data-usage="82"], [data-usage="83"], [data-usage="84"], [data-usage="85"], [data-usage="86"], [data-usage="87"], [data-usage="88"], [data-usage="89"], [data-usage="90"], [data-usage="91"], [data-usage="92"], [data-usage="93"], [data-usage="94"], [data-usage="95"], [data-usage="96"], [data-usage="97"], [data-usage="98"], [data-usage="99"], [data-usage="100"]),
+    .memory-fill[data-usage]:is([data-usage="76"], [data-usage="77"], [data-usage="78"], [data-usage="79"], [data-usage="80"], [data-usage="81"], [data-usage="82"], [data-usage="83"], [data-usage="84"], [data-usage="85"], [data-usage="86"], [data-usage="87"], [data-usage="88"], [data-usage="89"], [data-usage="90"], [data-usage="91"], [data-usage="92"], [data-usage="93"], [data-usage="94"], [data-usage="95"], [data-usage="96"], [data-usage="97"], [data-usage="98"], [data-usage="99"], [data-usage="100"]),
+    .disk-fill[data-usage]:is([data-usage="76"], [data-usage="77"], [data-usage="78"], [data-usage="79"], [data-usage="80"], [data-usage="81"], [data-usage="82"], [data-usage="83"], [data-usage="84"], [data-usage="85"], [data-usage="86"], [data-usage="87"], [data-usage="88"], [data-usage="89"], [data-usage="90"], [data-usage="91"], [data-usage="92"], [data-usage="93"], [data-usage="94"], [data-usage="95"], [data-usage="96"], [data-usage="97"], [data-usage="98"], [data-usage="99"], [data-usage="100"]) {
+        background: linear-gradient(90deg, #ef4444, #dc2626);
+        animation: pulse-bar 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse-bar {
+
+        0%,
+        100% {
+            opacity: 1;
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+        }
+
+        50% {
+            opacity: 0.85;
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.8);
+        }
+    }
+
+    .health-value {
+        font-weight: 600;
+        font-size: 15px;
+        color: #e5e7eb;
+        font-variant-numeric: tabular-nums;
+        min-width: 50px;
+        text-align: right;
+    }
+
+    .status-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .status-line {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .status-line:last-child {
+        border-bottom: none;
+    }
+
+    .status-label {
+        color: #9ca3af;
+        font-size: 14px;
+    }
+
+    .status-value {
+        color: #e5e7eb;
+        font-weight: 600;
+    }
+
+    .status-badge {
+        padding: 6px 14px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        animation: fadeIn 0.5s ease;
+    }
+
+    .status-online {
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+        box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
+    }
+
+    .status-offline {
+        background: linear-gradient(135deg, #6b7280, #4b5563);
+        color: white;
+        box-shadow: 0 2px 8px rgba(107, 114, 128, 0.4);
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: scale(0.9);
+        }
+
+        to {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+
+    .recovery-list {
+        min-height: 100px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .failsafe-info-box {
+        grid-column: 1 / -1;
+        background: rgba(59, 130, 246, 0.1);
+        border: 1px solid rgba(59, 130, 246, 0.3);
+        border-radius: 12px;
+        padding: 20px;
+        display: flex;
+        gap: 16px;
+        transition: background 0.3s ease;
+    }
+
+    .failsafe-info-box:hover {
+        background: rgba(59, 130, 246, 0.15);
+    }
+
+    .failsafe-info-box svg {
+        flex-shrink: 0;
+        color: #3b82f6;
+    }
+
+    .failsafe-info-box ul {
+        list-style: none;
+        padding-left: 0;
+    }
+
+    .failsafe-info-box li {
+        padding: 4px 0;
+        color: #cbd5e1;
+    }
+
+    .empty-message {
+        color: #6b7280;
+        text-align: center;
+        padding: 20px;
+        font-style: italic;
+    }
+
+    /* Circular Progress Styles */
+    .health-overview-card {
+        grid-column: 1 / -1;
+    }
+
+    .health-circles-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 30px;
+        padding: 10px;
+        justify-items: center;
+    }
+
+    .health-circle-wrapper {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .circular-progress {
+        position: relative;
+        width: 120px;
+        height: 120px;
+    }
+
+    .progress-ring {
+        transform: rotate(-90deg);
+        filter: drop-shadow(0 0 10px rgba(16, 185, 129, 0.4));
+    }
+
+    .progress-ring-bg {
+        fill: none;
+        stroke: rgba(255, 255, 255, 0.08);
+        stroke-width: 8;
+    }
+
+    .progress-ring-circle {
+        fill: none;
+        stroke-width: 8;
+        stroke-linecap: round;
+        stroke-dasharray: 327;
+        stroke-dashoffset: 327;
+        transition: stroke-dashoffset 2s cubic-bezier(0.4, 0, 0.2, 1),
+            stroke 0.5s ease;
+        filter: drop-shadow(0 0 8px currentColor);
+    }
+
+    /* Color coding for rings */
+    .cpu-ring,
+    .memory-ring,
+    .disk-ring {
+        stroke: url(#gradient-green);
+    }
+
+    .progress-text {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .progress-icon {
+        color: #10b981;
+        margin-bottom: 4px;
+        opacity: 0.8;
+    }
+
+    .progress-value {
+        font-size: 24px;
+        font-weight: 700;
+        color: #e5e7eb;
+        font-variant-numeric: tabular-nums;
+        line-height: 1;
+    }
+
+    .progress-unit {
+        font-size: 14px;
+        color: #9ca3af;
+        font-weight: 600;
+    }
+
+    .health-circle-label {
+        font-size: 14px;
+        color: #9ca3af;
+        font-weight: 500;
+        text-align: center;
+    }
+
+    /* Responsive design */
+    @media (max-width: 768px) {
+        .failsafe-container {
+            grid-template-columns: 1fr;
+        }
+
+        .health-bar {
+            height: 10px;
+        }
+
+        .health-circles-grid {
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+    }
+</style>
+
+<!-- SVG Gradients -->
+<svg width="0" height="0" style="position: absolute;">
+    <defs>
+        <linearGradient id="gradient-green" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#10b981;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#059669;stop-opacity:1" />
+        </linearGradient>
+        <linearGradient id="gradient-yellow" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#f59e0b;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#d97706;stop-opacity:1" />
+        </linearGradient>
+        <linearGradient id="gradient-red" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#ef4444;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#dc2626;stop-opacity:1" />
+        </linearGradient>
+    </defs>
+</svg>
+
+<script>
+    // Animate circular progress and count up numbers
+    document.addEventListener('DOMContentLoaded', function () {
+        // Animate progress rings
+        const rings = document.querySelectorAll('.progress-ring-circle');
+        const radius = 52;
+        const circumference = 2 * Math.PI * radius;
+
+        rings.forEach(ring => {
+            const usage = parseFloat(ring.getAttribute('data-usage')) || 0;
+            const offset = circumference - (usage / 100) * circumference;
+
+            // Set initial state
+            ring.style.strokeDashoffset = circumference;
+
+            // Color based on usage
+            let gradient = 'url(#gradient-green)';
+            if (usage >= 75) {
+                gradient = 'url(#gradient-red)';
+                ring.style.animation = 'pulse-ring 2s ease-in-out infinite';
+            } else if (usage >= 50) {
+                gradient = 'url(#gradient-yellow)';
+            }
+            ring.style.stroke = gradient;
+
+            // Animate to target
+            setTimeout(() => {
+                ring.style.strokeDashoffset = offset;
+            }, 100);
+        });
+
+        // Animate counting numbers
+        const counters = document.querySelectorAll('.progress-value');
+        counters.forEach(counter => {
+            const target = parseFloat(counter.getAttribute('data-target')) || 0;
+            const duration = 2000; // 2 seconds
+            const increment = target / (duration / 16); // 60fps
+            let current = 0;
+
+            const updateCounter = () => {
+                current += increment;
+                if (current < target) {
+                    counter.textContent = Math.floor(current * 10) / 10;
+                    requestAnimationFrame(updateCounter);
+                } else {
+                    counter.textContent = target;
+                }
+            };
+
+            setTimeout(updateCounter, 100);
+        });
+    });
+
+    // Pulse animation for high usage rings
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes pulse-ring {
+            0%, 100% {
+                opacity: 1;
+                filter: drop-shadow(0 0 8px currentColor);
+            }
+            50% {
+                opacity: 0.7;
+                filter: drop-shadow(0 0 16px currentColor);
+            }
+        }
+    `;
+    document.head.appendChild(style);
+</script>
+
+{% endblock %}

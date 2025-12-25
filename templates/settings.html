@@ -1,0 +1,267 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Settings - NVR System{% endblock %}
+
+{% block content %}
+<section id="settings-view" class="view-section active">
+    <header class="section-header">
+        <h2>System Settings</h2>
+    </header>
+
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }}">
+        {{ message }}
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    <div class="settings-container">
+        <div class="settings-form-card">
+            <h3>Edit Settings</h3>
+            <form method="post">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="segment_duration">Segment Duration (seconds)</label>
+                    <select id="segment_duration" name="segment_duration" class="form-input">
+                        <option value="60" {% if settings.segment_duration == 60 %}selected{% endif %}>1 Minute</option>
+                        <option value="300" {% if settings.segment_duration == 300 %}selected{% endif %}>5 Minutes
+                        </option>
+                        <option value="600" {% if settings.segment_duration == 600 %}selected{% endif %}>10 Minutes
+                        </option>
+                        <option value="900" {% if settings.segment_duration == 900 %}selected{% endif %}>15 Minutes
+                        </option>
+                        <option value="1800" {% if settings.segment_duration == 1800 %}selected{% endif %}>30 Minutes
+                        </option>
+                        <option value="3600" {% if settings.segment_duration == 3600 %}selected{% endif %}>60 Minutes
+                        </option>
+                    </select>
+                    <small class="form-hint">How long each video segment should be</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="retention_days">Retention Period (days)</label>
+                    <input type="number" id="retention_days" name="retention_days" class="form-input"
+                        value="{{ settings.retention_days }}" min="1" max="365">
+                    <small class="form-hint">Automatically delete recordings older than this</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="max_storage_gb">Maximum Storage (GB)</label>
+                    <input type="number" id="max_storage_gb" name="max_storage_gb" class="form-input"
+                        value="{{ settings.max_storage_gb }}" min="10" max="10000">
+                    <small class="form-hint">Maximum disk space to use for recordings</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="video_format">Recording Format</label>
+                    <select id="video_format" name="video_format" class="form-input">
+                        <option value="mp4" {% if settings.video_format == 'mp4' %}selected{% endif %}>MP4 (Recommended)
+                        </option>
+                        <option value="mkv" {% if settings.video_format == 'mkv' %}selected{% endif %}>MKV (Matroska)
+                        </option>
+                        <option value="mov" {% if settings.video_format == 'mov' %}selected{% endif %}>MOV (QuickTime)
+                        </option>
+                        <option value="avi" {% if settings.video_format == 'avi' %}selected{% endif %}>AVI</option>
+                        <option value="ts" {% if settings.video_format == 'ts' %}selected{% endif %}>MPEG-TS</option>
+                    </select>
+                    <small class="form-hint">Container format for recordings</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="video_codec">Video Codec</label>
+                    <select id="video_codec" name="video_codec" class="form-input">
+                        <option value="copy" {% if settings.video_codec == 'copy' %}selected{% endif %}>Copy (Direct
+                            Stream) - Lowest CPU</option>
+                        <option value="libx264" {% if settings.video_codec == 'libx264' %}selected{% endif %}>H.264
+                            (Re-encode)</option>
+                        <option value="libx265" {% if settings.video_codec == 'libx265' %}selected{% endif %}>H.265/HEVC
+                            (Re-encode)</option>
+                    </select>
+                    <small class="form-hint">Use 'Copy' to save CPU resources on Raspberry Pi</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="audio_codec">Audio Codec</label>
+                    <select id="audio_codec" name="audio_codec" class="form-input">
+                        <option value="aac" {% if settings.audio_codec == 'aac' %}selected{% endif %}>AAC (Recommended)
+                        </option>
+                        <option value="mp3" {% if settings.audio_codec == 'mp3' %}selected{% endif %}>MP3</option>
+                        <option value="copy" {% if settings.audio_codec == 'copy' %}selected{% endif %}>Copy (Original)
+                        </option>
+                        <option value="an" {% if settings.audio_codec == 'an' %}selected{% endif %}>No Audio</option>
+                    </select>
+                    <small class="form-hint">Audio encoding format</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="audio_bitrate">Audio Bitrate</label>
+                    <select id="audio_bitrate" name="audio_bitrate" class="form-input">
+                        <option value="64k" {% if settings.audio_bitrate == '64k' %}selected{% endif %}>64 kbps (Low)
+                        </option>
+                        <option value="128k" {% if settings.audio_bitrate == '128k' %}selected{% endif %}>128 kbps
+                            (Standard)</option>
+                        <option value="192k" {% if settings.audio_bitrate == '192k' %}selected{% endif %}>192 kbps (High)
+                        </option>
+                        <option value="256k" {% if settings.audio_bitrate == '256k' %}selected{% endif %}>256 kbps (Very
+                            High)</option>
+                    </select>
+                    <small class="form-hint">Higher bitrate means better audio quality but larger file size</small>
+                </div>
+
+                <button type="submit" class="btn btn-primary">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"
+                        style="display: inline-block; vertical-align: middle; margin-right: 4px;">
+                        <path d="M13 3L6 10L3 7" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                    </svg>
+                    Save Settings
+                </button>
+            </form>
+        </div>
+
+        <div class="settings-summary-card">
+            <h3>Current Configuration</h3>
+            <div class="summary-list">
+                <div class="summary-item">
+                    <span class="summary-label">Segment Duration</span>
+                    <span class="summary-value">
+                        {% if settings.segment_duration == 60 %}1 Minute
+                        {% elif settings.segment_duration == 300 %}5 Minutes
+                        {% elif settings.segment_duration == 600 %}10 Minutes
+                        {% elif settings.segment_duration == 900 %}15 Minutes
+                        {% elif settings.segment_duration == 1800 %}30 Minutes
+                        {% elif settings.segment_duration == 3600 %}60 Minutes
+                        {% else %}{{ settings.segment_duration }}s{% endif %}
+                    </span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Retention Period</span>
+                    <span class="summary-value">{{ settings.retention_days }} days</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Max Storage</span>
+                    <span class="summary-value">{{ settings.max_storage_gb }} GB</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Video Format</span>
+                    <span class="summary-value">{{ settings.video_format|upper }}</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Video Codec</span>
+                    <span class="summary-value">
+                        {% if settings.video_codec ==  'copy' %}Copy (Direct Stream)
+                        {% elif settings.video_codec ==  'libx264' %}H.264
+                        {% elif settings.video_codec ==  'libx265' %}H.265/HEVC
+                        {% else %}{{ settings.video_codec }}{% endif %}
+                    </span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Audio Codec</span>
+                    <span class="summary-value">
+                        {% if settings.audio_codec ==  'aac' %}AAC
+                        {% elif settings.audio_codec ==  'mp3' %}MP3
+                        {% elif settings.audio_codec ==  'copy' %}Copy (Original)
+                        {% elif settings.audio_codec ==  'an' %}No Audio
+                        {% else %}{{ settings.audio_codec }}{% endif %}
+                    </span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Audio Bitrate</span>
+                    <span class="summary-value">{{ settings.audio_bitrate }}</span>
+                </div>
+            </div>
+            <div class="summary-info-box">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="2" />
+                    <line x1="10" y1="6" x2="10" y2="10" stroke="currentColor" stroke-width="2" />
+                    <circle cx="10" cy="13" r="1" fill="currentColor" />
+                </svg>
+                <p>Changes are applied immediately to new recording segments.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    .settings-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+        padding: 20px;
+    }
+
+    @media (max-width: 768px) {
+        .settings-container {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .settings-form-card,
+    .settings-summary-card {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        padding: 24px;
+    }
+
+    .settings-form-card h3,
+    .settings-summary-card h3 {
+        margin: 0 0 20px 0;
+        font-size: 18px;
+    }
+
+    .summary-list {
+        margin-bottom: 20px;
+    }
+
+    .summary-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 12px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .summary-item:last-child {
+        border-bottom: none;
+    }
+
+    .summary-label {
+        color: #9ca3af;
+    }
+
+    .summary-value {
+        font-weight: 600;
+        color: #e5e7eb;
+    }
+
+    .summary-info-box {
+        background: rgba(59, 130, 246, 0.1);
+        border: 1px solid rgba(59, 130, 246, 0.3);
+        border-radius: 8px;
+        padding: 16px;
+        display: flex;
+        gap: 12px;
+        align-items: start;
+    }
+
+    .summary-info-box svg {
+        flex-shrink: 0;
+        color: #3b82f6;
+    }
+
+    .summary-info-box p {
+        margin: 0;
+        color: #9ca3af;
+        font-size: 14px;
+    }
+
+    .form-hint {
+        display: block;
+        margin-top: 4px;
+        color: #9ca3af;
+        font-size: 13px;
+    }
+</style>
+{% endblock %}

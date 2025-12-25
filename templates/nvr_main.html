@@ -1,0 +1,583 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NVR System - Professional Video Surveillance</title>
+    <meta name="description"
+        content="Professional NVR system for RTSP and ONVIF IP cameras with recording, playback, and export capabilities">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <!-- Fonts: System fonts used for offline compatibility -->
+</head>
+
+<body>
+    <!-- Main Container -->
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                        <rect width="32" height="32" rx="8" fill="url(#gradient1)" />
+                        <path d="M16 8L22 12V20L16 24L10 20V12L16 8Z" stroke="white" stroke-width="2"
+                            stroke-linejoin="round" />
+                        <circle cx="16" cy="16" r="3" fill="white" />
+                        <defs>
+                            <linearGradient id="gradient1" x1="0" y1="0" x2="32" y2="32">
+                                <stop offset="0%" stop-color="#667eea" />
+                                <stop offset="100%" stop-color="#764ba2" />
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                    <h1>NVR System</h1>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <button class="nav-item active" data-view="live">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="2" />
+                        <circle cx="10" cy="10" r="3" fill="currentColor" />
+                    </svg>
+                    <span>Live View</span>
+                </button>
+
+                <button class="nav-item" data-view="playback">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <path d="M7 5L15 10L7 15V5Z" fill="currentColor" />
+                    </svg>
+                    <span>Playback</span>
+                </button>
+
+                <button class="nav-item" data-view="cameras">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <rect x="2" y="6" width="16" height="10" rx="2" stroke="currentColor" stroke-width="2" />
+                        <path d="M18 9L20 7V13L18 11" stroke="currentColor" stroke-width="2" />
+                    </svg>
+                    <span>Cameras</span>
+                </button>
+
+                <button class="nav-item" data-view="exports">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <path d="M10 3V13M10 13L6 9M10 13L14 9" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" />
+                        <path d="M3 17H17" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                    </svg>
+                    <span>Exports</span>
+                </button>
+
+                <button class="nav-item" data-view="failsafe">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <path
+                            d="M13 7H7v6h6V7zM12 12H8V8h4v4zm5-9H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H3V5h14v14z"
+                            fill="currentColor" />
+                    </svg>
+                    <span>Failsafe</span>
+                </button>
+
+                <button class="nav-item" data-view="settings">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <path
+                            d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z"
+                            fill="currentColor" />
+                    </svg>
+                    <span>Settings</span>
+                </button>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="system-status">
+                    <div class="status-item">
+                        <span class="status-label">Storage</span>
+                        <span class="status-value" id="storage-status">--</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">Active Cameras</span>
+                        <span class="status-value" id="active-cameras">0</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Live View -->
+            <section id="live-view" class="view-section active">
+                <header class="section-header">
+                    <h2>Live View</h2>
+                    <div class="layout-controls">
+                        <span class="layout-label">Layout:</span>
+                        <button class="layout-btn active" data-layout="auto" title="Auto">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                <rect x="1" y="1" width="6" height="6" rx="1" />
+                                <rect x="9" y="1" width="6" height="6" rx="1" />
+                                <rect x="1" y="9" width="6" height="6" rx="1" />
+                                <rect x="9" y="9" width="6" height="6" rx="1" />
+                            </svg>
+                        </button>
+                        <button class="layout-btn" data-layout="1x1" title="1x1 Full">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                <rect x="1" y="1" width="14" height="14" rx="1" />
+                            </svg>
+                        </button>
+                        <button class="layout-btn" data-layout="2x2" title="2x2 Grid">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                <rect x="1" y="1" width="6" height="6" rx="1" />
+                                <rect x="9" y="1" width="6" height="6" rx="1" />
+                                <rect x="1" y="9" width="6" height="6" rx="1" />
+                                <rect x="9" y="9" width="6" height="6" rx="1" />
+                            </svg>
+                        </button>
+                        <button class="layout-btn" data-layout="3x3" title="3x3 Grid">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                <rect x="1" y="1" width="4" height="4" rx="0.5" />
+                                <rect x="6" y="1" width="4" height="4" rx="0.5" />
+                                <rect x="11" y="1" width="4" height="4" rx="0.5" />
+                                <rect x="1" y="6" width="4" height="4" rx="0.5" />
+                                <rect x="6" y="6" width="4" height="4" rx="0.5" />
+                                <rect x="11" y="6" width="4" height="4" rx="0.5" />
+                                <rect x="1" y="11" width="4" height="4" rx="0.5" />
+                                <rect x="6" y="11" width="4" height="4" rx="0.5" />
+                                <rect x="11" y="11" width="4" height="4" rx="0.5" />
+                            </svg>
+                        </button>
+                        <button class="layout-btn" data-layout="4x4" title="4x4 Grid">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                <rect x="1" y="1" width="3" height="3" rx="0.5" />
+                                <rect x="5" y="1" width="3" height="3" rx="0.5" />
+                                <rect x="9" y="1" width="3" height="3" rx="0.5" />
+                                <rect x="13" y="1" width="2" height="3" rx="0.5" />
+                                <rect x="1" y="5" width="3" height="3" rx="0.5" />
+                                <rect x="5" y="5" width="3" height="3" rx="0.5" />
+                                <rect x="9" y="5" width="3" height="3" rx="0.5" />
+                                <rect x="13" y="5" width="2" height="3" rx="0.5" />
+                                <rect x="1" y="9" width="3" height="3" rx="0.5" />
+                                <rect x="5" y="9" width="3" height="3" rx="0.5" />
+                                <rect x="9" y="9" width="3" height="3" rx="0.5" />
+                                <rect x="13" y="9" width="2" height="3" rx="0.5" />
+                                <rect x="1" y="13" width="3" height="2" rx="0.5" />
+                                <rect x="5" y="13" width="3" height="2" rx="0.5" />
+                                <rect x="9" y="13" width="3" height="2" rx="0.5" />
+                                <rect x="13" y="13" width="2" height="2" rx="0.5" />
+                            </svg>
+                        </button>
+                    </div>
+                </header>
+
+                <div class="camera-grid" id="camera-grid" data-layout="auto">
+                    <!-- Cameras will be dynamically added here -->
+                </div>
+            </section>
+
+            <!-- Playback View -->
+            <section id="playback-view" class="view-section playback-fit-screen">
+                <div class="playback-layout">
+                    <!-- Left: Video Player -->
+                    <div class="playback-video-area">
+                        <div class="video-player-wrapper">
+                            <video id="playback-video" class="video-player" controls>
+                                Your browser does not support video playback.
+                            </video>
+                            <div class="video-overlay" id="video-overlay">
+                                <p>Select a camera and date to view recordings</p>
+                            </div>
+                            <div class="speed-controls" id="speed-controls">
+                                <button class="speed-btn" data-speed="0.5">0.5x</button>
+                                <button class="speed-btn active" data-speed="1.0">1x</button>
+                                <button class="speed-btn" data-speed="2.0">2x</button>
+                                <button class="speed-btn" data-speed="4.0">4x</button>
+                                <button class="speed-btn" data-speed="8.0">8x</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right: Controls -->
+                    <div class="playback-controls-panel">
+                        <div class="playback-control-group">
+                            <label for="playback-camera-select">Camera</label>
+                            <select id="playback-camera-select" class="select-input playback-select">
+                                <option value="">Select Camera</option>
+                            </select>
+                        </div>
+
+                        <div class="playback-control-group">
+                            <label for="playback-date">Date</label>
+                            <input type="date" id="playback-date" class="date-input playback-date-input"
+                                min="2020-01-01">
+                            <div id="recording-status" class="recording-status-text">
+                                Select a camera
+                            </div>
+                        </div>
+
+                        <div class="playback-control-group">
+                            <label>Available Dates</label>
+                            <div id="available-dates-list" class="available-dates-list">
+                                <span class="no-dates-text">No dates loaded</span>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-secondary" id="export-btn" disabled style="margin-top: auto;">
+                            Export Selection
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Timeline - scrollable -->
+                <div class="timeline-section">
+                    <div class="timeline-header-compact">
+                        <h3>Timeline</h3>
+                    </div>
+                    <div class="timeline-scroll" id="timeline">
+                        <!-- Timeline will be rendered here -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Cameras Management -->
+            <section id="cameras-view" class="view-section">
+                <header class="section-header">
+                    <h2>Camera Management</h2>
+                    <button class="btn btn-primary" id="add-camera-btn-2">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                            <path d="M8 3V13M3 8H13" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                        </svg>
+                        Add Camera
+                    </button>
+                </header>
+
+                <div class="cameras-list" id="cameras-list">
+                    <!-- Camera list will be rendered here -->
+                </div>
+            </section>
+
+            <!-- Exports View -->
+            <section id="exports-view" class="view-section">
+                <header class="section-header">
+                    <h2>Exported Videos</h2>
+                    <button class="btn btn-secondary" id="refresh-exports-btn" onclick="app.loadExports()">
+                        Refresh
+                    </button>
+                </header>
+
+                <div class="exports-info-box">
+                    <p>📁 Exported videos are saved in the <strong>exports</strong> folder and available for download.
+                    </p>
+                </div>
+
+                <div class="exports-list" id="exports-list">
+                    <div class="exports-loading">Loading exports...</div>
+                </div>
+            </section>
+
+            <!-- Settings View -->
+            <section id="settings-view" class="view-section">
+                <header class="section-header">
+                    <h2>System Settings</h2>
+                    <button class="btn btn-primary" onclick="app.saveSettings()">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                            <path d="M13 3L6 10L3 7" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                        </svg>
+                        Save Settings
+                    </button>
+                </header>
+
+                <div class="settings-container">
+                    <div class="settings-form-card">
+                        <h3>Edit Settings</h3>
+                        <form id="settings-form" onsubmit="event.preventDefault(); app.saveSettings();">
+                            <div class="form-group">
+                                <label for="segment-duration">Segment Duration (seconds)</label>
+                                <select id="segment-duration" class="form-input">
+                                    <option value="60">1 Minute</option>
+                                    <option value="300">5 Minutes</option>
+                                    <option value="600">10 Minutes</option>
+                                    <option value="900">15 Minutes</option>
+                                    <option value="1800">30 Minutes</option>
+                                    <option value="3600">60 Minutes</option>
+                                </select>
+                                <small class="form-hint">How long each video segment should be</small>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="retention-days">Retention Period (days)</label>
+                                <input type="number" id="retention-days" class="form-input" min="1" max="365" value="7">
+                                <small class="form-hint">Automatically delete recordings older than this</small>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="video-format">Recording Format</label>
+                                <select id="video-format" class="form-input">
+                                    <option value="mp4">MP4 (Recommended)</option>
+                                    <option value="mkv">MKV (Matroska)</option>
+                                    <option value="mov">MOV (QuickTime)</option>
+                                    <option value="avi">AVI</option>
+                                    <option value="ts">MPEG-TS</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="video-codec">Video Codec</label>
+                                <select id="video-codec" class="form-input">
+                                    <option value="copy">Copy (Direct Stream) - Lowest CPU</option>
+                                    <option value="libx264">H.264 (Re-encode)</option>
+                                </select>
+                                <small class="form-hint">Use 'Copy' to save CPU resources on Raspberry Pi</small>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="audio-codec">Audio Codec</label>
+                                <select id="audio-codec" class="form-input">
+                                    <option value="aac">AAC (Recommended)</option>
+                                    <option value="mp3">MP3</option>
+                                    <option value="copy">Copy (Original)</option>
+                                    <option value="an">No Audio</option>
+                                </select>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="settings-summary-card">
+                        <h3>Current Configuration</h3>
+                        <div class="summary-list">
+                            <div class="summary-item">
+                                <span class="summary-label">Segment Duration</span>
+                                <span class="summary-value" id="summary-duration">--</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-label">Retention Period</span>
+                                <span class="summary-value" id="summary-retention">--</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-label">Video Format</span>
+                                <span class="summary-value" id="summary-format">--</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-label">Video Codec</span>
+                                <span class="summary-value" id="summary-video-codec">--</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-label">Audio Codec</span>
+                                <span class="summary-value" id="summary-audio-codec">--</span>
+                            </div>
+                        </div>
+                        <div class="summary-info-box">
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                <path
+                                    d="M10 2C5.58 2 2 5.58 2 10C2 14.42 5.58 18 10 18C14.42 18 18 14.42 18 10C18 5.58 14.42 2 10 2ZM11 15H9V13H11V15ZM11 11H9V5H11V11Z"
+                                    fill="currentColor" />
+                            </svg>
+                            <p>Changes are applied immediately to new recording segments.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Failsafe Monitor -->
+            <section id="failsafe-view" class="view-section">
+                <header class="section-header">
+                    <h2>🛡️ Failsafe Monitor</h2>
+                    <button class="btn btn-primary" id="refresh-failsafe-btn">Refresh Status</button>
+                </header>
+
+                <div class="failsafe-container">
+                    <div class="failsafe-card">
+                        <h3>System Health</h3>
+                        <div class="health-grid">
+                            <div class="health-item">
+                                <span class="health-label">CPU Usage</span>
+                                <div class="health-bar">
+                                    <div class="health-fill" id="cpu-fill" style="width: 0%"></div>
+                                </div>
+                                <span class="health-value" id="cpu-value">--</span>
+                            </div>
+                            <div class="health-item">
+                                <span class="health-label">Memory Usage</span>
+                                <div class="health-bar">
+                                    <div class="health-fill" id="memory-fill" style="width: 0%"></div>
+                                </div>
+                                <span class="health-value" id="memory-value">--</span>
+                            </div>
+                            <div class="health-item">
+                                <span class="health-label">Disk Usage</span>
+                                <div class="health-bar">
+                                    <div class="health-fill" id="disk-fill" style="width: 0%"></div>
+                                </div>
+                                <span class="health-value" id="disk-value">--</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="failsafe-card">
+                        <h3>Monitoring Status</h3>
+                        <div class="status-list">
+                            <div class="status-line">
+                                <span class="status-label">Monitor Running:</span>
+                                <span class="status-badge" id="monitor-running">--</span>
+                            </div>
+                            <div class="status-line">
+                                <span class="status-label">Cameras Monitored:</span>
+                                <span class="status-value" id="cameras-monitored">0</span>
+                            </div>
+                            <div class="status-line">
+                                <span class="status-label">Last Check:</span>
+                                <span class="status-value" id="last-check">--</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="failsafe-card">
+                        <h3>Recovery Attempts</h3>
+                        <div class="recovery-list" id="recovery-list">
+                            <p class="empty-message">No recovery attempts yet</p>
+                        </div>
+                    </div>
+
+                    <div class="failsafe-info-box">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                            <path
+                                d="M10 2C5.58 2 2 5.58 2 10C2 14.42 5.58 18 10 18C14.42 18 18 14.42 18 10C18 5.58 14.42 2 10 2ZM11 15H9V13H11V15ZM11 11H9V5H11V11Z"
+                                fill="currentColor" />
+                        </svg>
+                        <div>
+                            <p><strong>Automatic Failsafe System</strong></p>
+                            <p>Monitors system health and automatically recovers from failures without affecting
+                                streaming and recording.</p>
+                            <ul style="margin-top: 10px; margin-left: 20px;">
+                                <li>✓ Detects dead streams and reconnects automatically</li>
+                                <li>✓ Monitors recording activity and restarts if stalled</li>
+                                <li>✓ Tracks CPU, memory, and disk usage</li>
+                                <li>✓ Cleans up old exports and recordings</li>
+                                <li>✓ Updates every 30 seconds</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Add Camera Modal -->
+    <div class="modal" id="add-camera-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add New Camera</h3>
+                <button class="modal-close" id="close-modal">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                    </svg>
+                </button>
+            </div>
+
+            <form id="add-camera-form">
+                <div class="form-group">
+                    <label for="camera-name">Camera Name</label>
+                    <input type="text" id="camera-name" class="form-input" placeholder="e.g., Front Door" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="camera-type">Camera Type</label>
+                    <select id="camera-type" class="form-input">
+                        <option value="rtsp">RTSP</option>
+                        <option value="onvif">ONVIF</option>
+                    </select>
+                </div>
+
+                <!-- Separate Credential Fields -->
+                <div class="form-group">
+                    <label for="camera-username">Username</label>
+                    <input type="text" id="camera-username" class="form-input" placeholder="admin" required>
+                    <small class="form-hint">Camera login username</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="camera-password">Password</label>
+                    <input type="password" id="camera-password" class="form-input" placeholder="••••••••" required>
+                    <small class="form-hint">Camera login password</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="camera-ip">IP Address</label>
+                    <input type="text" id="camera-ip" class="form-input" placeholder="192.168.1.100" required>
+                    <small class="form-hint">Camera IP address or hostname</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="camera-port">RTSP Port</label>
+                    <input type="number" id="camera-port" class="form-input" placeholder="554" value="554" min="1"
+                        max="65535">
+                    <small class="form-hint">Default RTSP port is 554</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="camera-stream-path">Stream Path</label>
+                    <input type="text" id="camera-stream-path" class="form-input"
+                        placeholder="/cam/realmonitor?channel=1&subtype=0">
+                    <small class="form-hint">Stream endpoint path (e.g., /stream1 or
+                        /cam/realmonitor?channel=1&subtype=0)</small>
+                </div>
+
+                <!-- Show generated RTSP URL -->
+                <div class="form-group" style="background: rgba(0,0,0,0.1); padding: 12px; border-radius: 8px;">
+                    <label style="font-weight: 600; margin-bottom: 8px; display: block;">Generated RTSP URL:</label>
+                    <code id="generated-rtsp-url"
+                        style="display: block; padding: 8px; background: rgba(0,0,0,0.2); border-radius: 4px; font-size: 12px; word-break: break-all;">
+                        rtsp://username:password@192.168.1.100:554/stream
+                    </code>
+                </div>
+
+                <div id="validation-result"
+                    style="display: none; margin-bottom: 16px; padding: 12px; border-radius: 8px; background: rgba(0,0,0,0.2); font-size: 0.9rem;">
+                    <!-- content added by js -->
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="cancel-add">Cancel</button>
+                    <button type="button" class="btn btn-secondary" id="validate-btn">Test Connection</button>
+                    <button type="submit" class="btn btn-primary" id="submit-add-btn">Add Camera</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Export Modal -->
+    <div class="modal" id="export-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Export Video</h3>
+                <button class="modal-close" id="close-export-modal">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                    </svg>
+                </button>
+            </div>
+
+            <form id="export-form">
+                <div class="form-group">
+                    <label for="export-start-time">Start Time</label>
+                    <input type="datetime-local" id="export-start-time" class="form-input" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="export-end-time">End Time</label>
+                    <input type="datetime-local" id="export-end-time" class="form-input" required>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="cancel-export">Cancel</button>
+                    <button type="button" class="btn btn-success" id="quick-export-btn"
+                        title="Fast export of raw segments">Quick Export</button>
+                    <button type="submit" class="btn btn-primary">Full Export</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="{% static 'js/socket.io.min.js' %}"></script>
+    <script src="{% static 'js/camera_form.js' %}"></script>
+    <script src="{% static 'js/app.js' %}"></script>
+</body>
+
+</html>

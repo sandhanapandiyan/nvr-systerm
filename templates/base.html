@@ -1,0 +1,118 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}NVR System{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                        <rect width="32" height="32" rx="8" fill="url(#gradient1)" />
+                        <path d="M16 8L22 12V20L16 24L10 20V12L16 8Z" stroke="white" stroke-width="2"
+                            stroke-linejoin="round" />
+                        <circle cx="16" cy="16" r="3" fill="white" />
+                        <defs>
+                            <linearGradient id="gradient1" x1="0" y1="0" x2="32" y2="32">
+                                <stop offset="0%" stop-color="#667eea" />
+                                <stop offset="100%" stop-color="#764ba2" />
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                    <h1>NVR System</h1>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="/" class="nav-item {% if request.path == '/' %}active{% endif %}">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="2" />
+                        <circle cx="10" cy="10" r="3" fill="currentColor" />
+                    </svg>
+                    <span>Live View</span>
+                </a>
+
+                <a href="/playback" class="nav-item {% if 'playback' in request.path %}active{% endif %}">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <path d="M7 5L15 10L7 15V5Z" fill="currentColor" />
+                    </svg>
+                    <span>Playback</span>
+                </a>
+
+                <a href="/cameras" class="nav-item {% if 'cameras' in request.path %}active{% endif %}">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <rect x="2" y="6" width="16" height="10" rx="2" stroke="currentColor" stroke-width="2" />
+                        <path d="M18 9L20 7V13L18 11" stroke="currentColor" stroke-width="2" />
+                    </svg>
+                    <span>Cameras</span>
+                </a>
+
+                <a href="/exports" class="nav-item {% if 'exports' in request.path %}active{% endif %}">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <path d="M10 3V13M10 13L6 9M10 13L14 9" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" />
+                        <path d="M3 17H17" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                    </svg>
+                    <span>Exports</span>
+                </a>
+
+                <a href="/failsafe" class="nav-item {% if 'failsafe' in request.path %}active{% endif %}">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <path
+                            d="M13 7H7v6h6V7zM12 12H8V8h4v4zm5-9H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H3V5h14v14z"
+                            fill="currentColor" />
+                    </svg>
+                    <span>Failsafe</span>
+                </a>
+
+                <a href="/settings" class="nav-item {% if 'settings' in request.path %}active{% endif %}">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <path
+                            d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z"
+                            fill="currentColor" />
+                    </svg>
+                    <span>Settings</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="system-status">
+                    <div class="status-item">
+                        <span class="status-label">Storage</span>
+                        <span class="status-value" id="storage-status">--</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">Active Cameras</span>
+                        <span class="status-value" id="active-cameras">{{ active_cameras_count|default:0 }}</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <!-- Modals -->
+    {% include 'modals/add_camera.html' %}
+    {% include 'modals/export.html' %}
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="{% static 'js/camera_form.js' %}"></script>
+    <script src="{% static 'js/app.js' %}?v=4"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+
+</html>

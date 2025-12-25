@@ -1,0 +1,432 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Live View - NVR System{% endblock %}
+
+{% block content %}
+<section id="live-view" class="view-section active">
+    <header class="section-header">
+        <h2>Live View</h2>
+        <div class="layout-controls">
+            <span class="layout-label">Layout:</span>
+            <button class="layout-btn active" data-layout="auto" title="Auto">⊞</button>
+            <button class="layout-btn" data-layout="1x1" title="1x1">▢</button>
+            <button class="layout-btn" data-layout="2x2" title="2x2">⊞</button>
+        </div>
+    </header>
+
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }}">
+        {{ message }}
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    <div class="camera-grid" id="camera-grid" data-layout="auto">
+        {% for camera in cameras %}
+        <div class="camera-card">
+            <div class="camera-video">
+                {% if camera.is_streaming %}
+                <img src="/stream/{{ camera.id }}" alt="{{ camera.name }}" class="camera-feed">
+                <!-- Recording Overlay -->
+                {% if camera.is_recording %}
+                <div class="recording-overlay" data-segment-duration="{{ segment_duration }}">
+                    <div class="rec-header">
+                        <div class="rec-dot"></div>
+                        <span class="rec-text">REC segments</span>
+                    </div>
+                    <div class="rec-progress-bar">
+                        <div class="rec-progress-fill"></div>
+                    </div>
+                    <!-- Hover Details -->
+                    <div class="rec-details">
+                        <div class="rec-detail-item">
+                            <span>Elapsed:</span>
+                            <span class="rec-detail-value timer-val">00s / {{ segment_duration }}s</span>
+                        </div>
+                        <div class="rec-detail-item">
+                            <span>Mode:</span>
+                            <span class="rec-detail-value">Continuous</span>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                {% else %}
+                <div class="camera-placeholder">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none">
+                        <rect x="2" y="6" width="20" height="12" rx="2" stroke="currentColor" stroke-width="2" />
+                        <path d="M22 9L24 7V17L22 15" stroke="currentColor" stroke-width="2" />
+                    </svg>
+                    <p>Camera Offline</p>
+                </div>
+                {% endif %}
+            </div>
+            <div class="camera-footer">
+                <span class="cam-name">{{ camera.name }}</span>
+                {% if camera.is_recording %}
+                <span class="rec-badge">REC</span>
+                {% endif %}
+            </div>
+        </div>
+        {% empty %}
+        <div class="empty-state">
+            <svg width="100" height="100" viewBox="0 0 24 24" fill="none">
+                <rect x="2" y="6" width="20" height="12" rx="2" stroke="currentColor" stroke-width="2" />
+            </svg>
+            <h3>No Cameras Added</h3>
+            <p>Add your first camera to start monitoring</p>
+            <a href="{% url 'cameras' %}" class="btn btn-primary">Add Camera</a>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<style>
+    .camera-grid {
+        display: grid;
+        gap: 12px;
+        padding: 20px;
+        max-width: 100%;
+        height: calc(100vh - 140px);
+    }
+
+    .camera-grid[data-layout="auto"] {
+        grid-template-columns: repeat(2, 1fr);
+        grid-template-rows: repeat(2, 1fr);
+    }
+
+    .camera-grid[data-layout="1x1"] {
+        grid-template-columns: 1fr;
+        grid-template-rows: 1fr;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .camera-grid[data-layout="2x2"] {
+        grid-template-columns: repeat(2, 1fr);
+        grid-template-rows: repeat(2, 1fr);
+    }
+
+    .camera-card {
+        background: #000;
+        border-radius: 0;
+        padding: 0;
+        border: 1px solid #1a1a1a;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        overflow: hidden;
+    }
+
+    .camera-card:hover {
+        border-color: rgba(59, 130, 246, 0.5);
+    }
+
+    .camera-video {
+        flex: 1;
+        background: #000;
+        overflow: hidden;
+        position: relative;
+        min-height: 0;
+        width: 100%;
+        height: 100%;
+    }
+
+    .camera-feed {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        background: #000;
+        display: block;
+    }
+
+    .camera-placeholder {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: #6b7280;
+    }
+
+    .camera-placeholder svg {
+        margin-bottom: 8px;
+        opacity: 0.5;
+        width: 48px;
+        height: 48px;
+    }
+
+    .camera-placeholder p {
+        margin: 0;
+        font-size: 12px;
+    }
+
+    .camera-actions {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        justify-content: space-between;
+        flex-shrink: 0;
+    }
+
+    .camera-actions .btn-sm {
+        padding: 4px 10px;
+        font-size: 11px;
+        border-radius: 5px;
+    }
+
+    .recording-indicator {
+        color: #ef4444;
+        font-weight: 700;
+        font-size: 11px;
+        display: flex;
+        align-items: center;
+        gap: 3px;
+    }
+
+    .empty-state {
+        grid-column: 1 / -1;
+        text-align: center;
+        padding: 60px 20px;
+        color: #6b7280;
+    }
+
+    .alert {
+        padding: 12px 20px;
+        margin: 20px;
+        border-radius: 8px;
+        font-weight: 500;
+    }
+
+    .alert-success {
+        background: #d1fae5;
+        color: #065f46;
+        border: 1px solid #10b981;
+    }
+
+    .alert-error {
+        background: #fee2e2;
+        color: #991b1b;
+        border: 1px solid #ef4444;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .camera-grid[data-layout="auto"] {
+            grid-template-columns: 1fr;
+        }
+
+        .camera-grid[data-layout="2x2"] {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (min-width: 769px) and (max-width: 1200px) {
+        .camera-grid[data-layout="auto"] {
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        }
+    }
+
+    @media (min-width: 1201px) {
+        .camera-grid[data-layout="auto"] {
+            grid-template-columns: repeat(auto-fit, minmax(280px, 350px));
+        }
+    }
+
+    .camera-footer {
+        padding: 8px 12px;
+        background: #111;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-top: 1px solid #222;
+    }
+
+    .cam-name {
+        font-weight: 600;
+        font-size: 14px;
+    }
+
+    .rec-badge {
+        background: #ef4444;
+        color: white;
+        font-size: 10px;
+        font-weight: bold;
+        padding: 2px 6px;
+        border-radius: 4px;
+    }
+
+    /* Recording Overlay Top Right */
+    .recording-overlay {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: rgba(0, 0, 0, 0.6);
+        padding: 6px 10px;
+        border-radius: 6px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        z-index: 10;
+        backdrop-filter: blur(4px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        min-width: 110px;
+        overflow: hidden;
+    }
+
+    .recording-overlay:hover {
+        background: rgba(0, 0, 0, 0.9);
+        border-color: rgba(239, 68, 68, 0.4);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+        transform: translateY(2px);
+    }
+
+    .rec-header {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    form-group {
+        margin-bottom: 2px;
+    }
+
+    /* Hidden Details Section */
+    .rec-details {
+        max-height: 0;
+        opacity: 0;
+        transition: all 0.3s ease;
+    }
+
+    .recording-overlay:hover .rec-details {
+        max-height: 50px;
+        opacity: 1;
+        margin-top: 6px;
+        padding-top: 6px;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .rec-detail-item {
+        display: flex;
+        justify-content: space-between;
+        font-size: 10px;
+        color: #9ca3af;
+        margin-bottom: 3px;
+    }
+
+    .rec-detail-value {
+        color: #fff;
+        font-family: 'Courier New', monospace;
+    }
+
+    .rec-dot {
+        width: 8px;
+        height: 8px;
+        background-color: #ef4444;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 4px;
+        animation: blink 1.5s infinite;
+    }
+
+    .rec-text {
+        color: white;
+        font-size: 10px;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+    }
+
+    .rec-progress-bar {
+        width: 100%;
+        height: 4px;
+        background: rgba(255, 255, 255, 0.3);
+        border-radius: 2px;
+        margin-top: 4px;
+        overflow: hidden;
+    }
+
+    .rec-progress-fill {
+        height: 100%;
+        width: 0%;
+        background: #ef4444;
+        border-radius: 2px;
+        transition: width 1s linear;
+        box-shadow: 0 0 5px rgba(239, 68, 68, 0.8);
+        min-width: 2%;
+        /* Ensure visible start */
+    }
+
+    @keyframes blink {
+        0% {
+            opacity: 1;
+        }
+
+        50% {
+            opacity: 0.4;
+        }
+
+        100% {
+            opacity: 1;
+        }
+    }
+</style>
+
+<script>
+    // Recording overlay progress handling
+    document.addEventListener('DOMContentLoaded', function () {
+        console.log('Recording progress script loaded');
+        const overlays = document.querySelectorAll('.recording-overlay');
+        console.log('Found overlays:', overlays.length);
+
+        overlays.forEach(function (overlay, index) {
+            const durationStr = overlay.getAttribute('data-segment-duration');
+            console.log(`Overlay ${index} segment duration string:`, durationStr);
+
+            const duration = parseInt(durationStr, 10);
+            console.log(`Overlay ${index} parsed duration:`, duration);
+
+            if (isNaN(duration) || duration <= 0) {
+                console.warn(`Invalid duration for overlay ${index}:`, duration);
+                return;
+            }
+
+            const progressFill = overlay.querySelector('.rec-progress-fill');
+            const timerVal = overlay.querySelector('.timer-val');
+
+            console.log(`Overlay ${index} - progressFill:`, progressFill, 'timerVal:', timerVal);
+
+            let startTime = Date.now();
+
+            function update() {
+                const elapsedMs = Date.now() - startTime;
+                const elapsedSec = Math.floor(elapsedMs / 1000);
+                const percent = Math.min((elapsedSec / duration) * 100, 100);
+
+                if (progressFill) {
+                    progressFill.style.width = percent + '%';
+                }
+
+                if (timerVal) {
+                    timerVal.textContent = `${elapsedSec}s / ${duration}s`;
+                }
+
+                // Reset for next segment when complete
+                if (percent >= 100) {
+                    startTime = Date.now();
+                }
+            }
+
+            // Initial update
+            update();
+
+            // Update every second
+            const intervalId = setInterval(update, 1000);
+            console.log(`Started interval ${intervalId} for overlay ${index}`);
+        });
+    });
+</script>
+
+{% endblock %}

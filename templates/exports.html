@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Exports - NVR System{% endblock %}
+
+{% block content %}
+<section id="exports-view" class="view-section active">
+    <header class="section-header">
+        <h2>Exported Videos</h2>
+        <button class="btn btn-secondary" id="refresh-exports-btn" onclick="window.location.reload()">
+            Refresh
+        </button>
+    </header>
+
+    <div class="exports-info-box">
+        <p>📁 Exported videos are saved in the <strong>exports</strong> folder and available for download.
+        </p>
+    </div>
+
+    <div class="exports-list" id="exports-list">
+        {% if exports %}
+        {% for export in exports %}
+        <div class="export-item">
+            <div class="export-info">
+                <div class="export-name">{{ export.filename }}</div> <!-- Adjust accessing logic if needed -->
+                <!-- Assuming export.file.size and date are available. 
+                         Actually view passes ExportedVideo objects. 
+                         Model likely has 'file' field. -->
+                {% if export.file %}
+                <div class="export-meta">{{ export.file.size|filesizeformat }} • {{ export.created_at|date:"M d, Y
+                    H:i:s" }}</div>
+                {% else %}
+                <div class="export-meta">File missing • {{ export.created_at|date:"M d, Y H:i:s" }}</div>
+                {% endif %}
+            </div>
+            <div class="export-actions">
+                {% if export.file %}
+                <a href="{{ export.file.url }}" class="btn btn-primary btn-sm" download>
+                    Download
+                </a>
+                {% else %}
+                <span class="badge badge-warning">Processing/Error</span>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="exports-empty">
+            <div style="font-size: 48px; margin-bottom: 16px;">📭</div>
+            <p>No exported videos yet</p>
+            <small>Use the Playback page to export video segments</small>
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

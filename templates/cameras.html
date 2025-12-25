@@ -1,0 +1,353 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Camera Management - NVR System{% endblock %}
+
+{% block content %}
+<section id="cameras-view" class="view-section active">
+    <header class="section-header">
+        <h2>Camera Management</h2>
+        <button class="btn btn-primary" onclick="document.getElementById('add-camera-modal').style.display='flex'">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M8 3V13M3 8H13" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            </svg>
+            Add Camera
+        </button>
+    </header>
+
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }}">
+        {{ message }}
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    <div class="cameras-list">
+        {% for camera in cameras %}
+        <div class="camera-list-item">
+            <div class="camera-info">
+                <h3>{{ camera.name }}</h3>
+                <p class="camera-details">
+                    <span class="badge">{{ camera.camera_type }}</span>
+                    <span class="camera-ip">{{ camera.ip_address|default:camera.rtsp_url }}</span>
+                </p>
+                <p class="camera-status-text">
+                    Status: <span class="status-{{ camera.status }}">{{ camera.status|upper }}</span>
+                    {% if camera.is_streaming %} | Streaming{% endif %}
+                </p>
+
+                <!-- Recording Progress Bar (Hidden until API reinstated) -->
+                <!-- 
+                {% if camera.is_recording %}
+                <div class="recording-progress-container" id="progress-container-{{ camera.id }}">
+                    <div class="progress-header">
+                        <span class="progress-label">Recording Segment</span>
+                        <span class="progress-time" id="progress-time-{{ camera.id }}">Recording...</span>
+                    </div>
+                </div>
+                {% endif %} 
+                -->
+            </div>
+
+            <div class="camera-list-actions">
+                <form method="post" action="{% url 'delete_camera' camera.id %}" style="display: inline;"
+                    onsubmit="return confirm('Delete camera {{ camera.name }}?');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+        {% empty %}
+        <div class="empty-state">
+            <p>No cameras added yet. Click "Add Camera" to get started.</p>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<!-- Add Camera Modal -->
+<div class="modal" id="add-camera-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Add New Camera</h3>
+            <button class="modal-close" onclick="document.getElementById('add-camera-modal').style.display='none'">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                </svg>
+            </button>
+        </div>
+
+        <form method="post" action="{% url 'add_camera' %}">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="name">Camera Name</label>
+                <input type="text" id="name" name="name" class="form-input" placeholder="e.g., Front Door" required>
+            </div>
+
+            <div class="form-group">
+                <label for="type">Camera Type</label>
+                <select id="type" name="type" class="form-input">
+                    <option value="rtsp">RTSP</option>
+                    <option value="onvif">ONVIF</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" class="form-input" placeholder="admin" required>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" class="form-input" placeholder="••••••••" required>
+            </div>
+
+            <div class="form-group">
+                <label for="ip_address">IP Address</label>
+                <input type="text" id="ip_address" name="ip_address" class="form-input" placeholder="192.168.1.100"
+                    required>
+            </div>
+
+            <div class="form-group">
+                <label for="port">RTSP Port</label>
+                <input type="number" id="port" name="port" class="form-input" value="554" min="1" max="65535">
+            </div>
+
+            <div class="form-group">
+                <label for="stream_path">Stream Path</label>
+                <input type="text" id="stream_path" name="stream_path" class="form-input" placeholder="/stream1">
+            </div>
+
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary"
+                    onclick="document.getElementById('add-camera-modal').style.display='none'">Cancel</button>
+                <button type="submit" class="btn btn-primary">Add Camera</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .cameras-list {
+        padding: 20px;
+    }
+
+    .camera-list-item {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .camera-info h3 {
+        margin: 0 0 8px 0;
+        font-size: 18px;
+    }
+
+    .camera-details {
+        margin: 8px 0;
+        color: #9ca3af;
+    }
+
+    .badge {
+        background: #3b82f6;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .camera-list-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+    }
+
+    .modal-content {
+        background: #1f2937;
+        border-radius: 16px;
+        padding: 24px;
+        max-width: 500px;
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .modal-close {
+        background: none;
+        border: none;
+        color: #9ca3af;
+        cursor: pointer;
+        padding: 4px;
+    }
+
+    .form-group {
+        margin-bottom: 16px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #e5e7eb;
+    }
+
+    .form-input {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #374151;
+        border-radius: 8px;
+        background: #111827;
+        color: #e5e7eb;
+        font-size: 14px;
+    }
+
+    .form-input:focus {
+        outline: none;
+        border-color: #3b82f6;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 24px;
+    }
+
+    .btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .btn-secondary {
+        background: #374151;
+        color: #e5e7eb;
+    }
+
+    .btn-danger {
+        background: #ef4444;
+        color: white;
+    }
+
+    .btn-success {
+        background: #10b981;
+        color: white;
+    }
+
+    .btn-sm {
+        padding: 6px 12px;
+        font-size: 14px;
+    }
+
+    /* Recording Progress Bar Styles */
+    .recording-progress-container {
+        margin-top: 12px;
+        padding: 12px;
+        background: rgba(239, 68, 68, 0.1);
+        border-radius: 8px;
+        border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    .progress-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+    }
+
+    .progress-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #ef4444;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .progress-time {
+        font-size: 11px;
+        color: #9ca3af;
+        font-family: monospace;
+    }
+
+    .progress-bar-wrapper {
+        width: 100%;
+        height: 8px;
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 4px;
+        overflow: hidden;
+        margin-bottom: 6px;
+    }
+
+    .progress-bar {
+        height: 100%;
+        background: linear-gradient(90deg, #ef4444, #dc2626);
+        transition: width 0.3s ease;
+        border-radius: 4px;
+    }
+
+    .progress-info {
+        font-size: 10px;
+        color: #6b7280;
+        text-align: right;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        if (window.NVRApp) {
+            // Initialize recording progress polling
+
+            // We use the global app instance to handle polling if needed,
+            // but for now, since we removed APIs, we will rely on server refresh 
+            // OR we can implement a clean polling mechanism if you really want it.
+
+            // To fix the "0:00 / 5:00" display issue without API:
+            // The issue is that the text is hardcoded in the HTML template: 
+            // <span class="progress-time" id="progress-time-{{ camera.id }}">0:00 / 5:00</span>
+
+            // OPTIONS:
+            // 1. Remove the progress bar entirely since we don't have an API to feed it anymore.
+            // 2. Re-implement the API endpoint just for this status.
+
+            // Given the requirement to remove APIs, I will REMOVE the progress bar polling script 
+            // and hide the misleading progress bar elements until a websocket/server-sent event solution is built 
+            // or we accept it's static.
+
+            // For now, I will remove the broken script.
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,161 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Playback - NVR System{% endblock %}
+
+{% block content %}
+<style>
+    .dates-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        gap: 8px;
+        margin-top: 10px;
+        max-height: 300px;
+        overflow-y: auto;
+    }
+
+    .date-chip {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        padding: 10px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .date-chip:hover {
+        background: rgba(99, 102, 241, 0.2);
+        border-color: rgba(99, 102, 241, 0.5);
+    }
+
+    .date-chip.active {
+        background: var(--primary-color, #6366f1);
+        border-color: var(--primary-color, #6366f1);
+        color: white;
+        box-shadow: 0 0 15px rgba(99, 102, 241, 0.3);
+    }
+
+    .date-chip span {
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    .date-indicator {
+        width: 6px;
+        height: 6px;
+        background: #10b981;
+        /* Green dot */
+        border-radius: 50%;
+        display: inline-block;
+        margin-bottom: 2px;
+    }
+</style>
+<section id="playback-view" class="view-section active playback-fit-screen">
+    <div class="playback-layout">
+        <!-- Left: Video Player -->
+        <div class="playback-video-area">
+            <div class="video-player-wrapper">
+                <video id="playback-video" class="video-player" controls>
+                    Your browser does not support video playback.
+                </video>
+                <div class="video-overlay" id="video-overlay">
+                    <p>Select a camera and date to view recordings</p>
+                </div>
+                <div class="speed-controls" id="speed-controls">
+                    <button class="speed-btn" data-speed="0.5">0.5x</button>
+                    <button class="speed-btn active" data-speed="1.0">1x</button>
+                    <button class="speed-btn" data-speed="2.0">2x</button>
+                    <button class="speed-btn" data-speed="4.0">4x</button>
+                    <button class="speed-btn" data-speed="8.0">8x</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right: Controls -->
+        <div class="playback-controls-panel">
+            <div class="playback-control-group">
+                <label for="playback-camera-select">Camera</label>
+                <select id="playback-camera-select" class="select-input playback-select"
+                    onchange="window.location.href='?camera_id=' + this.value">
+                    <option value="">Select Camera</option>
+                    {% for camera in cameras %}
+                    <option value="{{ camera.id }}" {% if camera.id == selected_camera_id %}selected{% endif %}>
+                        {{ camera.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Hidden Date Input (kept for logic if needed, but primary nav is chips) -->
+            <input type="date" id="playback-date" class="date-input playback-date-input" style="display: none;"
+                value="{{ selected_date|default:'' }}">
+
+            <div class="playback-control-group">
+                <label>Available Dates</label>
+                <div id="recording-status" class="recording-status-text" style="margin-bottom: 8px;">
+                    {% if selected_camera_id %}
+                    {% if available_dates %}
+                    Select a date
+                    {% else %}
+                    No recordings found
+                    {% endif %}
+                    {% else %}
+                    Select a camera to see dates
+                    {% endif %}
+                </div>
+                <div id="available-dates-list" class="available-dates-list dates-grid">
+                    {% for date in available_dates %}
+                    <div class="date-chip {% if date == selected_date %}active{% endif %}"
+                        onclick="window.location.href='?camera_id={{ selected_camera_id }}&date={{ date }}'">
+                        <span class="date-indicator"></span>
+                        <span>{{ date }}</span> <!-- You might want to format this using filter -->
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <button class="btn btn-secondary" id="export-btn" {% if not selected_date %}disabled{% endif %}
+                style="margin-top: auto;">
+                Export Selection
+            </button>
+        </div>
+    </div>
+
+    <!-- Timeline - scrollable -->
+    <div class="timeline-section">
+        <div class="timeline-header-compact">
+            <h3>Timeline</h3>
+        </div>
+        <div class="timeline-scroll" id="timeline">
+            <!-- Timeline will be rendered by JS using server data -->
+            {% if not selected_date %}
+            <div class="no-recordings">Select a date to view timeline</div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Inject server-side data directly
+    window.INITIAL_CAMERAS = {{ cameras_json | safe }};
+    window.TIMELINE_DATA = {{ timeline_data_json | safe }}; // Injected from View
+    window.SELECTED_CAMERA_ID = "{{ selected_camera_id|default:'' }}";
+    window.SELECTED_DATE = "{{ selected_date|default:'' }}";
+
+    document.addEventListener('DOMContentLoaded', function () {
+        console.log('=== Playback Debug ===');
+        console.log('SELECTED_CAMERA_ID:', window.SELECTED_CAMERA_ID);
+        console.log('SELECTED_DATE:', window.SELECTED_DATE);
+        console.log('TIMELINE_DATA:', window.TIMELINE_DATA);
+        console.log('Number of segments:', window.TIMELINE_DATA ? window.TIMELINE_DATA.segments.length : 0);
+        // App will initialize and if TIMELINE_DATA is present, it will render it.
+    });
+</script>
+{% endblock %}
