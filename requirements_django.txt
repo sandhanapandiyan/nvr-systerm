@@ -1,0 +1,43 @@
+# Django Core
+Django==5.0.1
+djangorestframework==3.14.0
+django-cors-headers==4.3.1
+
+# WebSocket & Async Support
+channels==4.0.0
+channels-redis==4.2.0
+daphne==4.1.0
+
+# Database
+psycopg2-binary==2.9.9  # PostgreSQL support (optional, better than SQLite for production)
+
+# Authentication
+djangorestframework-simplejwt==5.3.1
+django-allauth==0.61.1
+
+# Task Queue
+celery==5.3.6
+redis==5.0.1
+
+# Video Processing (same as before)
+opencv-python-headless==4.10.0.84
+Pillow==11.0.0
+
+# ONVIF Support
+onvif-zeep==0.2.12
+
+# Utilities
+python-dateutil==2.9.0
+pytz==2024.2
+requests==2.32.3
+
+# Performance & Caching
+django-redis==5.4.0
+hiredis==2.3.2
+
+# Production Server
+gunicorn==21.2.0
+uvicorn[standard]==0.27.0
+
+# Monitoring & Logging
+django-extensions==3.2.3
